@@ -40,6 +40,6 @@ func main() {
 	router.HandleFunc("/songs", songController.GetSongs).Methods("GET")
 
 	// Serve the application
-	log.Println("Server started on http://localhost:8000")
-	log.Fatal(http.ListenAndServe(":8000", router))
+	log.Println("Server started on http://193.163.200:8000")
+	log.Fatal(http.ListenAndServe("0.0.0.0:8000", router))
 }
