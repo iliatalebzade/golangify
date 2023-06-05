@@ -1,12 +1,12 @@
 {
-    "database": {
-      "host": "localhost",
-      "port": 3306,
-      "user": "ilia",
-      "password": "Hbk2017qqw.",
-      "name": "streamer_golang"
-    },
-    "storageDir": "./storage",
-    "coversDir": "./storage/covers",
-    "audioDir": "./storage/audio"
+  "database": {
+    "host": "db",
+    "port": 3306,
+    "user": "ilia",
+    "password": "Hbk2017qqw.",
+    "name": "streamer_golang"
+  },
+  "storageDir": "./storage",
+  "coversDir": "./storage/covers",
+  "audioDir": "./storage/audio"
 }

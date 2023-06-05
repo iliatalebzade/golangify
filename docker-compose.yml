@@ -13,10 +13,10 @@ services:
   db:
     image: mysql:5.7
     environment:
-      MYSQL_ROOT_PASSWORD: your-root-password
-      MYSQL_DATABASE: your-database-name
-      MYSQL_USER: your-username
-      MYSQL_PASSWORD: your-password
+      MYSQL_ROOT_PASSWORD: habibi2023
+      MYSQL_DATABASE: streamer_golang
+      MYSQL_USER: ilia
+      MYSQL_PASSWORD: Hbk2017qqw.
     ports:
       - "3306:3306"
     volumes:
