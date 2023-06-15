@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 	"nice_stream/config"
@@ -35,11 +36,27 @@ func main() {
 	// Initialize the song controller
 	songController := controllers.NewSongController(db)
 
-	// Define the routes
+	// Define the /songs routes
 	router.HandleFunc("/songs", songController.CreateSong).Methods("POST")
 	router.HandleFunc("/songs", songController.GetSongs).Methods("GET")
+
+	// Define the root route
+	router.HandleFunc("/", rootHandler).Methods("GET")
 
 	// Serve the application
 	log.Println("Server started on http://193.163.200:8000")
 	log.Fatal(http.ListenAndServe("0.0.0.0:8000", router))
+}
+
+type RootResponse struct {
+	Message string `json:"message"`
+}
+
+func rootHandler(w http.ResponseWriter, r *http.Request) {
+	response := RootResponse{
+		Message: "Welcome to the GoPotify app",
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
 }
