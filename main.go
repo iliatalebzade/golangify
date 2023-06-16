@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"nice_stream/config"
 	"nice_stream/controllers"
+	"nice_stream/middlewares"
 	"nice_stream/utils"
 
 	"github.com/gorilla/mux"
@@ -35,6 +36,19 @@ func main() {
 
 	// Initialize the song controller
 	songController := controllers.NewSongController(db)
+
+	// Define the /songs routes with authorization middleware
+	songsRouter := router.PathPrefix("/songs").Subrouter()
+	songsRouter.Use(middlewares.Authorize)
+	songsRouter.HandleFunc("", songController.CreateSong).Methods("POST")
+	songsRouter.HandleFunc("", songController.GetSongs).Methods("GET")
+
+	// Initialize the user controller
+	userController := controllers.NewUserController(db)
+
+	// Define the user routes
+	router.HandleFunc("/register", userController.RegisterUser).Methods("POST")
+	router.HandleFunc("/login", userController.LoginUser).Methods("POST")
 
 	// Define the /songs routes
 	router.HandleFunc("/songs", songController.CreateSong).Methods("POST")
