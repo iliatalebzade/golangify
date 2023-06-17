@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"nice_stream/config"
 	"nice_stream/models"
+	"nice_stream/types"
 	"nice_stream/utils"
 	"path/filepath"
 
@@ -25,7 +26,7 @@ func NewSongController(db *gorm.DB) *SongController {
 // CreateSong handles the creation of a new song.
 func (c *SongController) CreateSong(w http.ResponseWriter, r *http.Request) {
 	// Parse the multipart form data
-	err := r.ParseMultipartForm(32 << 20) // Limit: 32MB
+	err := r.ParseMultipartForm(32 << 20) // Limit: z32MB
 	if err != nil {
 		http.Error(w, "Failed to parse multipart form", http.StatusBadRequest)
 		return
@@ -97,29 +98,23 @@ func (c *SongController) CreateSong(w http.ResponseWriter, r *http.Request) {
 
 // GetSongs returns a list of songs with their details.
 func (c *SongController) GetSongs(w http.ResponseWriter, r *http.Request) {
-	var songs []models.Song
+	songs := []models.Song{}
 	err := c.db.Preload("Artist").Find(&songs).Error
 	if err != nil {
 		http.Error(w, "Failed to retrieve songs", http.StatusInternalServerError)
+		return
 	}
 
-	type SongResponse struct {
-		Name     string `json:"name"`
-		Artist   string `json:"artist"`
-		CoverURL string `json:"coverUrl"`
-		AudioURL string `json:"audioUrl"`
-	}
-
-	var songResponses []SongResponse
-	for _, song := range songs {
-		songResponses = append(songResponses, SongResponse{
-			Name:     song.Name,
-			Artist:   song.Artist.Name,
-			CoverURL: song.CoverURL,
-			AudioURL: song.AudioURL,
-		})
+	allSongs := make(types.SongsList, len(songs))
+	for i := range songs {
+		allSongs[i] = types.SongItem{
+			Name:     songs[i].Name,
+			Artist:   songs[i].Artist.Name,
+			CoverURL: songs[i].CoverURL,
+			AudioURL: songs[i].AudioURL,
+		}
 	}
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(songResponses)
+	json.NewEncoder(w).Encode(types.GetSongsResponse{Songs: allSongs})
 }

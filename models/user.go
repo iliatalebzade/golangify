@@ -8,3 +8,9 @@ type User struct {
 	Email    string `gorm:"type:varchar(255);unique"`
 	Password string
 }
+
+// BlacklistedToken represents a blacklisted token stored in the database.
+type BlacklistedToken struct {
+	gorm.Model
+	Token string `gorm:"type:varchar(255);uniqueIndex"`
+}

@@ -37,9 +37,12 @@ func main() {
 	// Initialize the song controller
 	songController := controllers.NewSongController(db)
 
+	// Initiate the middlewares
+	authorizationMiddleware := middlewares.NewAuthorize(db)
+
 	// Define the /songs routes with authorization middleware
 	songsRouter := router.PathPrefix("/songs").Subrouter()
-	songsRouter.Use(middlewares.Authorize)
+	songsRouter.Use(authorizationMiddleware.CheckToken)
 	songsRouter.HandleFunc("", songController.CreateSong).Methods("POST")
 	songsRouter.HandleFunc("", songController.GetSongs).Methods("GET")
 
@@ -49,6 +52,7 @@ func main() {
 	// Define the user routes
 	router.HandleFunc("/register", userController.RegisterUser).Methods("POST")
 	router.HandleFunc("/login", userController.LoginUser).Methods("POST")
+	router.HandleFunc("/logout", userController.LogoutUser).Methods("DELETE")
 
 	// Define the /songs routes
 	router.HandleFunc("/songs", songController.CreateSong).Methods("POST")

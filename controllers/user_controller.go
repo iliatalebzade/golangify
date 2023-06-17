@@ -60,7 +60,9 @@ func (uc *UserController) RegisterUser(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(types.RegisterResponse{Message: "Faced an error during registering your account, please try again later."})
+		json.NewEncoder(w).Encode(types.RegisterResponse{
+			Message: "Faced an error during registering your account, please try again later.",
+		})
 		return
 	}
 
@@ -75,11 +77,15 @@ func (uc *UserController) RegisterUser(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if strings.Contains(err.Error(), fmt.Sprintf("Duplicate entry '%s' for key 'users.email'", req.Email)) {
 			w.WriteHeader(http.StatusConflict)
-			json.NewEncoder(w).Encode(types.RegisterResponse{Message: "This email is already in use, please sign in, change password or use another one."})
+			json.NewEncoder(w).Encode(types.RegisterResponse{
+				Message: "This email is already in use, please sign in, change password or use another one.",
+			})
 			return
 		}
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(types.RegisterResponse{Message: "Faced an error during registering your account, please try again later."})
+		json.NewEncoder(w).Encode(types.RegisterResponse{
+			Message: "Faced an error during registering your account, please try again later.",
+		})
 		return
 	}
 
@@ -101,22 +107,33 @@ func (uc *UserController) LoginUser(w http.ResponseWriter, r *http.Request) {
 	// Check if the necessary parameters are indeed sent by the client
 	if req.Email == "" && req.Password == "" {
 		w.WriteHeader(http.StatusUnprocessableEntity)
-		json.NewEncoder(w).Encode(types.LoginResponse{Message: "Please provide both email and password", Token: nil})
+		json.NewEncoder(w).Encode(types.LoginResponse{
+			Message: "Please provide both email and password",
+			Token:   nil,
+		})
 		return
 	} else if req.Email == "" {
 		w.WriteHeader(http.StatusUnprocessableEntity)
-		json.NewEncoder(w).Encode(types.LoginResponse{Message: "Please provide an email", Token: nil})
+		json.NewEncoder(w).Encode(types.LoginResponse{
+			Message: "Please provide an email",
+			Token:   nil,
+		})
 		return
 	} else if req.Password == "" {
 		w.WriteHeader(http.StatusUnprocessableEntity)
-		json.NewEncoder(w).Encode(types.LoginResponse{Message: "Please provide a password", Token: nil})
+		json.NewEncoder(w).Encode(types.LoginResponse{
+			Message: "Please provide a password",
+			Token:   nil,
+		})
 		return
 	}
 
 	// Check if the provided email address is a valid one
 	if utils.IsValidEmail(req.Email) != nil {
 		w.WriteHeader(http.StatusUnprocessableEntity)
-		json.NewEncoder(w).Encode(types.RegisterResponse{Message: "Please provide a valid email"})
+		json.NewEncoder(w).Encode(types.RegisterResponse{
+			Message: "Please provide a valid email",
+		})
 		return
 	}
 
@@ -127,7 +144,10 @@ func (uc *UserController) LoginUser(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			w.WriteHeader(http.StatusUnauthorized)
-			json.NewEncoder(w).Encode(types.LoginResponse{Message: "Couldn't find an email with the given combination, try siging up or change password", Token: nil})
+			json.NewEncoder(w).Encode(types.LoginResponse{
+				Message: "Couldn't find an email with the given combination, try siging up or change password",
+				Token:   nil,
+			})
 			return
 		}
 		w.WriteHeader(http.StatusInternalServerError)
@@ -139,7 +159,10 @@ func (uc *UserController) LoginUser(w http.ResponseWriter, r *http.Request) {
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password))
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
-		json.NewEncoder(w).Encode(types.LoginResponse{Message: "Couldn't find an email with the given combination, try siging up or change password", Token: nil})
+		json.NewEncoder(w).Encode(types.LoginResponse{
+			Message: "Couldn't find an email with the given combination, try siging up or change password",
+			Token:   nil,
+		})
 		return
 	}
 
@@ -147,7 +170,10 @@ func (uc *UserController) LoginUser(w http.ResponseWriter, r *http.Request) {
 	token, err := utils.GenerateToken(user.Email)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(types.LoginResponse{Message: "Encountered an error trying to sign you in, please try again later", Token: nil})
+		json.NewEncoder(w).Encode(types.LoginResponse{
+			Message: "Encountered an error trying to sign you in, please try again later",
+			Token:   nil,
+		})
 		return
 	}
 
@@ -155,4 +181,37 @@ func (uc *UserController) LoginUser(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(types.LoginResponse{Message: "Login was successful.", Token: &token})
+}
+
+func (uc *UserController) LogoutUser(w http.ResponseWriter, r *http.Request) {
+	// Extract the token from the request headers
+	token, err := utils.ExtractTokenFromHeader(r)
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(types.AuthenticateResponse{
+			Message: "You're not authorized to visit this page",
+		})
+		return
+	}
+
+	// Create a new BlacklistedToken object
+	blacklistedToken := models.BlacklistedToken{
+		Token: token,
+	}
+
+	// Save the blacklisted token to the database
+	err = uc.db.Create(&blacklistedToken).Error
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(types.LogoutResponse{
+			Message: "Encountered an error trying to sign you out, please try again later",
+		})
+		return
+	}
+
+	// Respond with a successful logout message
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(types.LogoutResponse{
+		Message: "Logout successful.",
+	})
 }

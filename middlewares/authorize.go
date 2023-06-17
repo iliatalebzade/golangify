@@ -5,12 +5,14 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"nice_stream/models"
 	"nice_stream/types"
+	"nice_stream/utils"
 	"os"
-	"strings"
 
 	"github.com/golang-jwt/jwt"
 	"github.com/joho/godotenv"
+	"gorm.io/gorm"
 )
 
 type contextKey string
@@ -19,38 +21,37 @@ const (
 	ContextKeyUsername contextKey = "username"
 )
 
-func Authorize(next http.Handler) http.Handler {
+type Authorize struct {
+	db *gorm.DB
+}
+
+func NewAuthorize(db *gorm.DB) *Authorize {
+	return &Authorize{db: db}
+}
+
+func (a *Authorize) CheckToken(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Search the request headers for an `Authorization` header
-		// And if successful get the value
-		tokenHeader := r.Header.Get("Authorization")
-
-		// A message to use whenever the authorize process was unsuccessful (the use was unauthorized)
-		unauthorized_response := types.AuthenticateResponse{
-			Message: "You're not authorized to visit this page",
-		}
-
-		// Split the Authorization header value to separate the token type and token
-		parts := strings.Split(tokenHeader, " ")
-		if len(parts) != 2 || parts[0] != "Bearer" {
+		tokenString, err := utils.ExtractTokenFromHeader(r)
+		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
-			json.NewEncoder(w).Encode(unauthorized_response)
+			json.NewEncoder(w).Encode(types.AuthenticateResponse{
+				Message: "You're not authorized to visit this page",
+			})
 			return
 		}
-
-		// Select the part of the string that contains the token and the token only
-		tokenString := parts[1]
 
 		// Check if the token part exists and if not,
 		// Return with a StatusUnauthorized, informing the client of their lack of access to the requested page
 		if tokenString == "" {
 			w.WriteHeader(http.StatusUnauthorized)
-			json.NewEncoder(w).Encode(unauthorized_response)
+			json.NewEncoder(w).Encode(types.AuthenticateResponse{
+				Message: "You're not authorized to visit this page",
+			})
 			return
 		}
 
 		// Load the .env file to get the secret_key used in encoding and decoding tokens
-		err := godotenv.Load()
+		err = godotenv.Load()
 		if err != nil {
 			log.Println(err.Error())
 			w.WriteHeader(http.StatusInternalServerError)
@@ -71,7 +72,9 @@ func Authorize(next http.Handler) http.Handler {
 		if err != nil {
 			log.Println(err.Error())
 			w.WriteHeader(http.StatusUnauthorized)
-			json.NewEncoder(w).Encode(unauthorized_response)
+			json.NewEncoder(w).Encode(types.AuthenticateResponse{
+				Message: "You're not authorized to visit this page",
+			})
 			return
 		}
 
@@ -82,7 +85,21 @@ func Authorize(next http.Handler) http.Handler {
 		if !ok || !token.Valid {
 			log.Println(err.Error())
 			w.WriteHeader(http.StatusUnauthorized)
-			json.NewEncoder(w).Encode(unauthorized_response)
+			json.NewEncoder(w).Encode(types.AuthenticateResponse{
+				Message: "You're not authorized to visit this page",
+			})
+			return
+		}
+
+		// Query the blacklist tokens table to check if the token is blacklisted
+		var blacklistedToken models.BlacklistedToken
+		err = a.db.Where("token = ?", tokenString).First(&blacklistedToken).Error
+		if err == nil {
+			// Token is blacklisted
+			w.WriteHeader(http.StatusUnauthorized)
+			json.NewEncoder(w).Encode(types.AuthenticateResponse{
+				Message: "You're not authorized to visit this page",
+			})
 			return
 		}
 

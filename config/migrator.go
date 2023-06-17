@@ -7,5 +7,10 @@ import (
 )
 
 func migrateModels(db *gorm.DB) error {
-	return db.AutoMigrate(&models.Song{}, &models.Artist{}, &models.User{})
+	return db.AutoMigrate(
+		&models.Song{},
+		&models.Artist{},
+		&models.User{},
+		&models.BlacklistedToken{},
+	)
 }
