@@ -6,14 +6,15 @@ WORKDIR /app
 
 # Install air for hot-reloading
 RUN apk update && apk add --no-cache git
-RUN go mod init nice_stream
-# RUN go get -u github.com/cosmtrek/air
 
 # Copy the GoLang application source code to the container
 COPY . .
 
+# Generate go.mod and go.sum files
+RUN go mod init nice_stream
+
 # Expose a port (if your application listens on a specific port)
 EXPOSE 8080
 
-# Specify the command to run the "air" tool when the container starts
+# Specify the command to run the application when the container starts
 CMD ["go", "run", "main.go"]
