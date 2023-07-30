@@ -1,0 +1,18 @@
+<!-- template.html -->
+<!DOCTYPE html>
+<html>
+<body>
+    <h3>Dear </h3><span>{{.Email}}</span>,
+    <br/>
+    <h4>An account in our website was created by your email,
+        <br>
+        if it's indeed you,
+        <br>
+        please verify your email by clicking the below link,
+        <br>
+        and if not, please report this matter to us by sending a mail to accounts@gopotify.io
+    </h4>
+
+    <a href="http://localhost:8000/verify_account/{{.Token}}">Click to verify!</a>
+</body>
+</html>

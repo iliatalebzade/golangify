@@ -3,16 +3,23 @@ version: "3"
 services:
   app:
     build:
-      context: .
+      context: ./backend
       dockerfile: Dockerfile
     ports:
-      - "8000:8000"
+      - "8000:8080"
     volumes:
       - .:/app
-      - app-storage:/app/storage
-    container_name: app
+      - app-storage:/app/backend/storage
+      - ./backend/config/.env:/app/backend/config/.env
     depends_on:
       - db
+
+  smtp:
+    build:
+      context: ./smtp
+      dockerfile: Dockerfile
+    ports:
+      - "25:25"
 
   db:
     image: mysql:5.7
@@ -25,21 +32,22 @@ services:
       - "3306:3306"
     volumes:
       - mysql-data:/var/lib/mysql
-    container_name: mysql_database
 
   nginx:
-    image: nginx:latest
+    build:
+      context: ./server
+      dockerfile: Dockerfile
     ports:
       - "80:80"
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf
-      - app-storage:/app/storage
-    container_name: nginx
+      - app-storage:/app/backend/storage
+    command: ["/usr/local/bin/wait-for-it.sh", "app:8000", "--", "nginx", "-g", "daemon off;"]
+    restart: always
     depends_on:
       - app
+
   portainer:
     image: portainer/portainer-ce:latest
-    container_name: portainer
     ports:
       - "8080:8000"
       - "9443:9443"
@@ -47,6 +55,17 @@ services:
       - "/var/run/docker.sock:/var/run/docker.sock"
       - "portainer_data:/data"
     restart: always
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+    environment:
+      - NODE_ENV=production
 
 volumes:
   mysql-data:

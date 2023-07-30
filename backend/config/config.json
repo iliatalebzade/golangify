@@ -1,0 +1,18 @@
+{
+  "database": {
+    "host": "db",
+    "port": 3306,
+    "user": "ilia",
+    "password": "Hbk2017qqw.",
+    "name": "streamer_golang"
+  },
+  "smppServer": {
+    "host": "localhost",
+    "port": 25,
+    "username": "ilia",
+    "password": "Hbk2017qqw."
+  },
+  "storageDir": "./storage",
+  "coversDir": "./storage/covers",
+  "audioDir": "./storage/audio"
+}
